@@ -1,0 +1,9 @@
+# SatQuery AI — GPU & ML Training Requirements (SIH 26167)
+torch>=2.0.0
+torchvision>=0.15.0
+transformers>=4.40.0
+peft>=0.10.0
+accelerate>=0.28.0
+datasets>=2.18.0
+scikit-learn
+tqdm

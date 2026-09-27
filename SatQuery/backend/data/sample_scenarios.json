@@ -1,0 +1,91 @@
+[
+  {
+    "id": "scenario-vqa-1",
+    "task": "VQA",
+    "title": "Agricultural Land & Water System (Sentinel-2)",
+    "description": "Multispectral true-color acquisition showing agricultural patchwork, river and reservoir system, and northern settlement.",
+    "image_count": 1,
+    "primary_image": "sc1_vqa_agricultural_lake.png",
+    "secondary_image": null,
+    "default_query": "What is the dominant land cover in this image?",
+    "suggested_queries": [
+      "What is the dominant land cover in this image?",
+      "Are there water bodies visible here?",
+      "Is there vegetation in this region?",
+      "Describe this satellite scene."
+    ],
+    "benchmark": "RSVQA-LR / BigEarthNet.txt",
+    "sensor": "Sentinel-2 MSI / Cartosat-2S Optical"
+  },
+  {
+    "id": "scenario-grounding-1",
+    "task": "GROUNDING",
+    "title": "Water Reservoir & Vegetation Grounding",
+    "description": "Multi-class landscape featuring distinct water bodies, agricultural crops, forest canopies, and built structures.",
+    "image_count": 1,
+    "primary_image": "sc2_grounding_reservoir_fields.png",
+    "secondary_image": null,
+    "default_query": "Show me the water bodies.",
+    "suggested_queries": [
+      "Show me the water bodies.",
+      "Locate the vegetation areas.",
+      "Find the built-up regions.",
+      "Where are the agricultural fields?"
+    ],
+    "benchmark": "VRSBench Referring Expressions",
+    "sensor": "High-Resolution Optical"
+  },
+  {
+    "id": "scenario-grounding-2",
+    "task": "GROUNDING",
+    "title": "Coastal Harbor & Industrial Port (VRSBench)",
+    "description": "High-resolution coastal scene with docks, maritime vessels, container yards, and connecting transport corridors.",
+    "image_count": 1,
+    "primary_image": "vrsbench_coastal_port.png",
+    "secondary_image": null,
+    "default_query": "Where are the built-up structures and docks?",
+    "suggested_queries": [
+      "Where are the built-up structures and docks?",
+      "Find the water bodies.",
+      "Locate roads and transport corridors.",
+      "Highlight vegetation."
+    ],
+    "benchmark": "VRSBench (lx709)",
+    "sensor": "Aerial / Satellite Orthophoto"
+  },
+  {
+    "id": "scenario-change-1",
+    "task": "CHANGE_DETECTION",
+    "title": "Urban Expansion & Industrial Development",
+    "description": "Bi-temporal satellite pair (T1 baseline vs T2 post-development) capturing new industrial complex and road infrastructure.",
+    "image_count": 2,
+    "primary_image": "sc3_change_t1_before.png",
+    "secondary_image": "sc3_change_t2_after.png",
+    "default_query": "What changed between these two images?",
+    "suggested_queries": [
+      "What changed between these two images?",
+      "Did the built-up area increase over time?",
+      "How much vegetation was converted?",
+      "What is the percentage of changed areas?"
+    ],
+    "benchmark": "CDVQA (YZHJessica)",
+    "sensor": "Bi-temporal Optical Pair (T1 & T2)"
+  },
+  {
+    "id": "scenario-fusion-1",
+    "task": "FUSION",
+    "title": "Optical (Cartosat-2S) + SAR (RISAT-1) Fusion",
+    "description": "Multi-sensor combination leveraging optical spectral reflectance and SAR backscatter roughness to isolate built structures.",
+    "image_count": 2,
+    "primary_image": "sc4_fusion_cartosat_optical.png",
+    "secondary_image": "sc4_fusion_risat_sar.png",
+    "default_query": "Combine optical and SAR imagery to identify built-up areas.",
+    "suggested_queries": [
+      "Combine optical and SAR imagery to identify built-up areas.",
+      "Use optical and SAR to differentiate water from smooth terrain.",
+      "Analyze urban density using multi-sensor fusion."
+    ],
+    "benchmark": "BigEarthNet.txt (S1 SAR + S2 Optical) / ISRO PS-26167",
+    "sensor": "Sentinel-2 / Cartosat-2S + Sentinel-1 / RISAT SAR"
+  }
+]

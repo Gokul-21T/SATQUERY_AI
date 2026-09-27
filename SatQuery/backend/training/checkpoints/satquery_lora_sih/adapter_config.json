@@ -1,0 +1,27 @@
+{
+  "base_model_name": "SatQuery-RS-Backbone",
+  "peft_type": "LORA",
+  "r": 16,
+  "lora_alpha": 32,
+  "lora_dropout": 0.05,
+  "target_modules": [
+    "query_proj",
+    "key_proj",
+    "val_proj",
+    "out_proj"
+  ],
+  "modules_to_save": [
+    "task_head",
+    "bbox_head",
+    "change_head"
+  ],
+  "total_parameters": 5493769,
+  "trainable_parameters": 166665,
+  "trained_on_gpu": "CPU",
+  "training_time_seconds": 1.55,
+  "benchmarks": [
+    "BigEarthNet.txt",
+    "VRSBench",
+    "CDVQA"
+  ]
+}

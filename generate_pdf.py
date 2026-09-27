@@ -1,0 +1,821 @@
+import os
+import subprocess
+import fitz  # PyMuPDF
+
+html_content = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SatQuery AI — Conversational SIH Video Script & Presentation Strategy</title>
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 11mm 13mm 12mm 13mm;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    color: #0f172a;
+    background-color: #ffffff;
+    line-height: 1.42;
+    font-size: 9.3pt;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Header banner */
+  .doc-header {
+    background: linear-gradient(135deg, #090e1d 0%, #1e293b 100%);
+    color: #ffffff;
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin-bottom: 14px;
+    border-left: 6px solid #0ea5e9;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+
+  .badge-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    font-size: 7.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 2px 7px;
+    border-radius: 4px;
+    display: inline-block;
+  }
+
+  .badge-blue { background: rgba(14, 165, 233, 0.2); color: #38bdf8; border: 1px solid #0ea5e9; }
+  .badge-green { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
+  .badge-purple { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid #a855f7; }
+  .badge-amber { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b; }
+
+  .doc-title {
+    font-size: 18pt;
+    font-weight: 800;
+    margin: 2px 0 4px 0;
+    color: #f8fafc;
+    letter-spacing: -0.02em;
+  }
+
+  .doc-subtitle {
+    font-size: 9.5pt;
+    color: #94a3b8;
+    margin: 0;
+    font-weight: 500;
+  }
+
+  .tagline-quote {
+    margin-top: 8px;
+    padding: 6px 12px;
+    background: rgba(14, 165, 233, 0.12);
+    border-left: 3px solid #38bdf8;
+    border-radius: 4px;
+    font-size: 8.8pt;
+    color: #bae6fd;
+    font-style: italic;
+  }
+
+  /* Headings */
+  h1 {
+    font-size: 12.5pt;
+    font-weight: 800;
+    color: #0f172a;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 3px;
+    margin-top: 14px;
+    margin-bottom: 8px;
+    break-after: avoid;
+  }
+
+  h2 {
+    font-size: 10.5pt;
+    font-weight: 700;
+    color: #1e293b;
+    margin-top: 12px;
+    margin-bottom: 5px;
+    break-after: avoid;
+  }
+
+  h3 {
+    font-size: 9.5pt;
+    font-weight: 700;
+    color: #334155;
+    margin-top: 8px;
+    margin-bottom: 3px;
+    break-after: avoid;
+  }
+
+  p {
+    margin: 0 0 5px 0;
+    text-align: justify;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8.2pt;
+    margin: 6px 0 10px 0;
+    break-inside: avoid;
+  }
+
+  th, td {
+    border: 1px solid #cbd5e1;
+    padding: 5px 7px;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    background-color: #f1f5f9;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  tr:nth-child(even) td {
+    background-color: #f8fafc;
+  }
+
+  /* Callout boxes */
+  .callout {
+    padding: 7px 11px;
+    border-radius: 6px;
+    margin: 6px 0;
+    font-size: 8.3pt;
+    break-inside: avoid;
+  }
+
+  .callout-info {
+    background-color: #f0f9ff;
+    border-left: 4px solid #0284c7;
+    color: #0369a1;
+  }
+
+  .callout-success {
+    background-color: #f0fdf4;
+    border-left: 4px solid #16a34a;
+    color: #15803d;
+  }
+
+  .callout-warning {
+    background-color: #fffbeb;
+    border-left: 4px solid #d97706;
+    color: #b45309;
+  }
+
+  /* Script Block Styling */
+  .script-card {
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    margin-bottom: 10px;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    break-inside: avoid;
+  }
+
+  .script-header {
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 5px 11px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+  }
+
+  .script-title {
+    font-weight: 800;
+    font-size: 9.3pt;
+    color: #0f172a;
+  }
+
+  .script-meta {
+    font-size: 7.8pt;
+    font-weight: 600;
+    color: #64748b;
+  }
+
+  .speaker-tag {
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 7.2pt;
+    text-transform: uppercase;
+  }
+
+  .spk-1 { background: #e0f2fe; color: #0369a1; }
+  .spk-2 { background: #f3e8ff; color: #7e22ce; }
+  .spk-3 { background: #dcfce7; color: #15803d; }
+  .spk-4 { background: #fef3c7; color: #b45309; }
+  .spk-5 { background: #fee2e2; color: #b91c1c; }
+
+  .script-body {
+    padding: 9px 11px;
+  }
+
+  .visual-cue {
+    background: #090e1d;
+    color: #38bdf8;
+    border-radius: 5px;
+    padding: 5px 9px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 7.8pt;
+    line-height: 1.3;
+    margin-bottom: 7px;
+    border-left: 3px solid #0ea5e9;
+  }
+
+  .visual-label {
+    color: #94a3b8;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 6.8pt;
+    margin-bottom: 2px;
+  }
+
+  .spoken-text {
+    font-size: 8.8pt;
+    line-height: 1.48;
+    color: #1e293b;
+    padding: 3px 7px;
+    border-left: 3px solid #cbd5e1;
+    background: #fdfdfd;
+  }
+
+  .spoken-label {
+    font-size: 6.8pt;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #64748b;
+    margin-bottom: 2px;
+  }
+
+  .section-break {
+    break-before: page;
+  }
+
+  ul, ol {
+    margin-top: 2px;
+    margin-bottom: 4px;
+    padding-left: 16px;
+  }
+
+  li {
+    margin-bottom: 2px;
+  }
+
+  .footer-note {
+    font-size: 7.5pt;
+    color: #94a3b8;
+    text-align: center;
+    margin-top: 10px;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 5px;
+    break-inside: avoid;
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER / HEADER BANNER -->
+<div class="doc-header">
+  <div class="badge-row">
+    <span class="badge badge-blue">Smart India Hackathon 2026</span>
+    <span class="badge badge-green">ISRO Space Applications Centre (SAC)</span>
+    <span class="badge badge-purple">Problem Statement ID: 26167</span>
+    <span class="badge badge-amber">Conversational Presentation Strategy</span>
+  </div>
+  <div class="doc-title">SatQuery AI: Conversational Satellite Intelligence</div>
+  <div class="doc-subtitle">Integrated 8-Minute SIH Jury Presentation Script — Combining Conversational Elegance with Deep Remote Sensing & AI Credibility</div>
+  <div class="tagline-quote">
+    “Instead of asking ‘Which model should I use?’, the user simply asks ‘What do I want to know?’ — SatQuery AI: Ask the satellite. Understand the ground.”
+  </div>
+</div>
+
+<!-- EXECUTIVE INTRODUCTION -->
+<h1>Strategic Narrative & Presentation Design</h1>
+<p>
+  This unified script merges the <strong>conversational elegance, human-centered storytelling, and intuitive philosophical rhythm</strong> of the natural pitch with the <strong>rigorous remote-sensing physics, verified benchmarks, LoRA PEFT ML pipeline, and live UI telemetry</strong> of our SatQuery engineering platform.
+</p>
+<p>
+  The presentation avoids academic monotony while completely disarming SIH jury skepticism by demonstrating that conversational simplicity is backed by real remote sensing science: spectral indices, difference tensors, microwave SAR double-bounce backscatter, and an auditable execution trace.
+</p>
+
+<!-- 8-MINUTE BLUEPRINT -->
+<h1>8-Minute Structural Blueprint & Speaker Allocation</h1>
+<table>
+  <thead>
+    <tr>
+      <th style="width: 13%;">Timestamp</th>
+      <th style="width: 25%;">Narrative Section</th>
+      <th style="width: 17%;">Speaker</th>
+      <th style="width: 45%;">Conversational Focus & Visual Anchor</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>0:00 – 0:30</strong> (30s)</td>
+      <td>1. Opening Hook</td>
+      <td><span class="speaker-tag spk-1">Speaker 1</span></td>
+      <td>The Earth Observation paradox: A picture contains answers, but every question demands a different analysis. What if the system decides the analysis?</td>
+    </tr>
+    <tr>
+      <td><strong>0:30 – 1:15</strong> (45s)</td>
+      <td>2. The Problem (ISRO-SAC PS-26167)</td>
+      <td><span class="speaker-tag spk-1">Speaker 1</span></td>
+      <td>The gap between a human question and specialized GIS/AI toolchains. The problem is not lack of satellite data—it's accessibility.</td>
+    </tr>
+    <tr>
+      <td><strong>1:15 – 1:55</strong> (40s)</td>
+      <td>3. The Existing Gap</td>
+      <td><span class="speaker-tag spk-1">Speaker 1</span></td>
+      <td>Fragmented tools vs. generic LLM failures: Desktop GIS has math but lacks conversation; generic VLMs hallucinate coordinates and cannot parse SAR.</td>
+    </tr>
+    <tr>
+      <td><strong>1:55 – 2:25</strong> (30s)</td>
+      <td>4. The Core Insight</td>
+      <td><span class="speaker-tag spk-2">Speaker 2</span></td>
+      <td><em>"Describe the information you need, not the algorithm you need."</em> SatQuery as an intelligent orchestration layer delivering evidence.</td>
+    </tr>
+    <tr>
+      <td><strong>2:25 – 3:00</strong> (35s)</td>
+      <td>5. Solution Reveal & Workflow</td>
+      <td><span class="speaker-tag spk-2">Speaker 2</span></td>
+      <td>Natural query + imagery &rarr; intent routing &rarr; 4 specialist engines (VQA, Grounding, Change, Fusion) &rarr; visual proof bundle.</td>
+    </tr>
+    <tr>
+      <td><strong>3:00 – 3:30</strong> (30s)</td>
+      <td>6. Demo 1: Visual QA (RS-VQA)</td>
+      <td><span class="speaker-tag spk-3">Speaker 3</span></td>
+      <td><em>"What is the dominant land cover?"</em> &rarr; Sentinel-2 MSI &rarr; dominant vegetation (51.07%), water (12.11%), spectral index breakdown.</td>
+    </tr>
+    <tr>
+      <td><strong>3:30 – 4:00</strong> (30s)</td>
+      <td>7. Demo 2: Visual Grounding</td>
+      <td><span class="speaker-tag spk-3">Speaker 3</span></td>
+      <td>From <em>what</em> is present to <em>where</em> it is present: <em>"Show me the water bodies"</em> &rarr; cyan HUD bounding box &amp; contour overlay.</td>
+    </tr>
+    <tr>
+      <td><strong>4:00 – 4:30</strong> (30s)</td>
+      <td>8. Demo 3: Bi-Temporal Change</td>
+      <td><span class="speaker-tag spk-3">Speaker 3</span></td>
+      <td>Temporal reasoning: <em>"What changed between these two images?"</em> &rarr; difference tensor, +7.3% industrial growth, -6.5% canopy loss, 3-panel view.</td>
+    </tr>
+    <tr>
+      <td><strong>4:30 – 5:00</strong> (30s)</td>
+      <td>9. Demo 4: Optical + SAR Fusion</td>
+      <td><span class="speaker-tag spk-3">Speaker 3</span></td>
+      <td>Multimodal reasoning: Cartosat-2S optical + RISAT-1 C-band SAR &rarr; microwave double-bounce confirms 2.07% built-up through clouds/shadows.</td>
+    </tr>
+    <tr>
+      <td><strong>5:00 – 5:40</strong> (40s)</td>
+      <td>10. Technical Architecture</td>
+      <td><span class="speaker-tag spk-4">Speaker 4</span></td>
+      <td>React 19 UI &rarr; FastAPI async gateway &rarr; autonomous intent routing layer &rarr; remote sensing engine &rarr; unified response.</td>
+    </tr>
+    <tr>
+      <td><strong>5:40 – 6:20</strong> (40s)</td>
+      <td>11. Evidence & Execution Trace</td>
+      <td><span class="speaker-tag spk-4">Speaker 4</span></td>
+      <td>No black-box chatbots: Transparent step-by-step execution trace, quantitative statistics, and Human-in-the-Loop decision support.</td>
+    </tr>
+    <tr>
+      <td><strong>6:20 – 7:00</strong> (40s)</td>
+      <td>12. ML Fine-Tuning & Innovation</td>
+      <td><span class="speaker-tag spk-5">Speaker 5</span></td>
+      <td>PEFT LoRA ($r=16, \alpha=32$) on Qwen2-VL, 14.1M params (0.64%), 156× memory savings. Benchmarks: BigEarthNet.txt, VRSBench, CDVQA.</td>
+    </tr>
+    <tr>
+      <td><strong>7:00 – 7:35</strong> (35s)</td>
+      <td>13. Scalability, Impact & SDGs</td>
+      <td><span class="speaker-tag spk-5">Speaker 5</span></td>
+      <td>OGC WMS/WFS Bhuvan integration, cloud/edge containerization, and measurable alignment with UN SDGs 11, 13, 15, and 9.</td>
+    </tr>
+    <tr>
+      <td><strong>7:35 – 8:00</strong> (25s)</td>
+      <td>14. Final Closing Defense</td>
+      <td><span class="speaker-tag spk-5">Speaker 5</span></td>
+      <td><em>"Question. Analysis. Evidence. Insight. SatQuery AI — Ask the satellite. Understand the ground."</em></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- SCRIPT CARDS -->
+<div class="section-break"></div>
+<h1>The Integrated Spoken Video Script</h1>
+
+<!-- SECTION 1: OPENING HOOK -->
+<div class="script-card">
+  <div class="script-header">
+    <span class="script-title">1. Opening Hook — The Power of a Satellite Image</span>
+    <span class="script-meta">0:00 – 0:30 (30s) | <span class="speaker-tag spk-1">Speaker 1</span></span>
+  </div>
+  <div class="script-body">
+    <div class="visual-cue">
+      <div class="visual-label">Visual Direction:</div>
+      [VISUAL: Cinematic high-contrast satellite scan transitions. A crisp Cartosat optical tile appears, followed by a time-lapse of urban sprawl, and a raw grayscale RISAT radar backscatter tile. On screen text animates: SATELLITE IMAGE &rarr; NATURAL-LANGUAGE QUESTION &rarr; SATQUERY AI.]
+    </div>
+    <div class="spoken-label">Spoken Script:</div>
+    <div class="spoken-text">
+      A satellite image can contain the answer to a critical national question.<br><br>
+      But finding that answer is not as simple as looking at a picture.<br><br>
+      If an officer asks, <em>"Is there water in this area?"</em>, one type of analysis is required.<br>
+      If they ask, <em>"What changed between these two dates?"</em>, we need a completely different temporal analysis.<br>
+      And if they need to combine optical and radar imagery during a monsoonal flood, the challenge changes yet again.<br><br>
+      So what if decision-makers could simply ask the question in plain human language—and let the system autonomously determine the analysis?
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 2: THE PROBLEM -->
+<div class="script-card">
+  <div class="script-header">
+    <span class="script-title">2. The Problem — ISRO Space Applications Centre PS-26167</span>
+    <span class="script-meta">0:30 – 1:15 (45s) | <span class="speaker-tag spk-1">Speaker 1</span></span>
+  </div>
+  <div class="script-body">
+    <div class="visual-cue">
+      <div class="visual-label">Visual Direction:</div>
+      [VISUAL: Clean graphic displaying the Smart India Hackathon header with ISRO Space Applications Centre (SAC) insignia and Problem Statement ID: 26167. Flow diagram appears: USER QUESTION &rarr; SATELLITE DATA &rarr; GIS / MODELS / MANUAL SCRIPTING &rarr; INTERPRETATION &rarr; ANSWER. A red "Bottleneck" bracket highlights the manual middle steps.]
+    </div>
+    <div class="spoken-label">Spoken Script:</div>
+    <div class="spoken-text">
+      This is the fundamental operational challenge addressed by <strong>ISRO Space Applications Centre Problem Statement 26167</strong>.<br><br>
+      India's remote-sensing constellations generate massive volumes of earth observation data. But accessing actionable intelligence from that data currently demands specialized expertise in remote-sensing physics, band mathematics, GIS software, and disjoint AI algorithms.<br><br>
+      Today, an analyst must inspect the imagery, identify the correct analytical method, configure complex GIS operations, execute atmospheric calibrations, and finally interpret raw rasters.<br><br>
+      The problem is not a lack of satellite data.<br><br>
+      The real problem is the cognitive and technical gap between a human question and the specialized analysis required to answer it.
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 3: EXISTING GAP -->
+<div class="script-card">
+  <div class="script-header">
+    <span class="script-title">3. The Existing Gap — Toolchain Fragmentation vs. Generic AI</span>
+    <span class="script-meta">1:15 – 1:55 (40s) | <span class="speaker-tag spk-1">Speaker 1</span></span>
+  </div>
+  <div class="script-body">
+    <div class="visual-cue">
+      <div class="visual-label">Visual Direction:</div>
+      [VISUAL: Side-by-side comparison screen. Left side: Isolated legacy tools (QGIS, ArcGIS, Python scripts) requiring manual parameter tuning. Right side: A generic commercial VLM failing on satellite data—hallucinating coordinates and displaying an error when given multi-band rasters or C-band radar files.]
+    </div>
+    <div class="spoken-label">Spoken Script:</div>
+    <div class="spoken-text">
+      Existing tools are designed around isolated, individual capabilities.<br><br>
+      One desktop system may perform visual question answering. Another separate tool identifies objects. Another script calculates change detection. And completely different specialized software is needed to process Synthetic Aperture Radar imagery.<br><br>
+      This creates a fragmented, delayed workflow where the user must know which tool to launch, which model to configure, and how to decipher the output.<br><br>
+      At the same time, generic multimodal AI fails because satellite imagery carries domain-specific physical properties—spatial resolution, multispectral bands, acquisition timestamps, and radar backscatter—that standard vision models cannot interpret.<br><br>
+      This is the exact gap <strong>SatQuery AI</strong> bridges.
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 4: CORE INSIGHT -->
+<div class="script-card">
+  <div class="script-header">
+    <span class="script-title">4. Core Insight — "Information Needed, Not the Algorithm Needed"</span>
+    <span class="script-meta">1:55 – 2:25 (30s) | <span class="speaker-tag spk-2">Speaker 2</span></span>
+  </div>
+  <div class="script-body">
+    <div class="visual-cue">
+      <div class="visual-label">Visual Direction:</div>
+      [VISUAL: Elegant conceptual 3D animation. The user types a simple sentence. The SatQuery logo pulses, acting as an orchestration layer. The query cleanly branches into 4 specialized processing paths, each accompanied by visual icons: VQA, Grounding, Change Detection, Sensor Fusion. Flow: USER &rarr; NATURAL-LANGUAGE QUESTION &rarr; SATQUERY AI &rarr; SPECIALIST ANALYSIS &rarr; EVIDENCE.]
+    </div>
+    <div class="spoken-label">Spoken Script:</div>
+    <div class="spoken-text">
+      Our core insight is simple:<br><br>
+      <strong>The user should describe the information they need—not the algorithm they need.</strong><br><br>
+      Instead of forcing an officer or disaster responder to decide whether they need a spectral index, a contour segmentation, or a radar backscatter threshold, SatQuery acts as an intelligent orchestration layer.<br><br>
+      It interprets the human intent, determines the required remote-sensing capability, processes the available imagery, and returns the result accompanied by verifiable visual evidence.
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 5: SOLUTION REVEAL -->
+<div class="section-break"></div>
+<div class="script-card">
+  <div class="script-header">
+    <span class="script-title">5. Solution Reveal & End-to-End Workflow</span>
+    <span class="script-meta">2:25 – 3:00 (35s) | <span class="speaker-tag spk-2">Speaker 2</span></span>
+  </div>
+  <div class="script-body">
+    <div class="visual-cue">
+      <div class="visual-label">Visual Direction:</div>
+      [VISUAL: The camera cuts to the SatQuery Mission-Control Interface at http://localhost:5173. Showcase the glassmorphism layout: Left sidebar with 1-click SIH presets and specialist selectors; Center dual-slot viewer with original/overlay/split modes; Right panel with task badge, confidence, quantitative telemetry, evidence cards, and execution trace.]
+    </div>
+    <div class="spoken-label">Spoken Script:</div>
+    <div class="spoken-text">
+      The SatQuery workflow begins with just two inputs: the satellite imagery and the user's natural-language query.<br><br>
+      Our autonomous routing layer interprets the query's semantics and dispatches the workload to one of four core capabilities:
+      remote-sensing visual question answering, visual grounding, bi-temporal change detection, or optical-SAR multimodal fusion.<br><br>
+      Crucially, the output is never just a raw textual response. SatQuery synthesizes pixel-level visual overlays, bounding box HUDs, quantitative land-cover percentages, and a step-by-step execution trace showing exactly how the request was handled.<br><br>
+      Let us see this workflow in action across four real-world demonstrations.
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 6: DEMO 1 - VQA -->
+<div class="script-card">
+  <div class="script-header">
+    <span class="script-title">6. Live Demo 1: Remote-Sensing Visual Question Answering</span>
+    <span class="script-meta">3:00 – 3:30 (30s) | <span class="speaker-tag spk-3">Speaker 3</span></span>
+  </div>
+  <div class="script-body">
+    <div class="visual-cue">
+      <div class="visual-label">Visual Direction:</div>
+      [VISUAL: Live screen capture. Mouse selects "Agricultural Land & Water System (Sentinel-2)" in the left sidebar. Query auto-populates: "What is the dominant land cover in this image?" Click "Run Query". Within 50ms, Right panel updates: Task: VQA (94% confidence), Vegetation: 51.07%, Water: 12.11%, Built-up: 4.8%. Execution trace steps light up.]
+    </div>
+    <div class="spoken-label">Spoken Script:</div>
+    <div class="spoken-text">
+      First, we demonstrate remote-sensing visual question answering.<br><br>
+      We select a Sentinel-2 multispectral scene from the <strong>RSVQA-LR</strong> benchmark and ask: <em>"What is the dominant land cover in this image?"</em><br><br>
+      SatQuery's router immediately classifies the intent as <code>VQA</code> with ninety-four percent confidence. Instead of a vague description, the specialist engine computes spectral distributions directly from the imagery, confirming that vegetation covers fifty-one point zero seven percent of the surveyed surface area, localized in the western quadrant, alongside twelve point one percent water bodies.
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 7: DEMO 2 - GROUNDING -->
+<div class="script-card">
+  <div class="script-header">
+    <span class="script-title">7. Live Demo 2: Visual Grounding & Spatial Localization</span>
+    <span class="script-meta">3:30 – 4:00 (30s) | <span class="speaker-tag spk-3">Speaker 3</span></span>
+  </div>
+  <div class="script-body">
+    <div class="visual-cue">
+      <div class="visual-label">Visual Direction:</div>
+      [VISUAL: Mouse selects "Water Reservoir Grounding" preset (VRSBench). Query: "Show me the water bodies." Click "Run Query". Detected task: GROUNDING (92% confidence). Viewer displays a glowing cyan translucent mask over the reservoir, framed by a mission-control HUD bounding box tagged "central region, 12.11% area". The presenter adjusts the live overlay opacity slider.]
+    </div>
+    <div class="spoken-label">Spoken Script:</div>
+    <div class="spoken-text">
+      Knowing what is present is valuable—but in emergency response, we must know <em>exactly where it is</em>.<br><br>
+      Now we ask: <em>"Show me the water bodies."</em><br><br>
+      SatQuery routes to <code>GROUNDING</code>, activates our spectral NDWI localization pipeline, and grounds the feature directly on the imagery. Notice how the system moves seamlessly from <em>what</em> is present to <em>where</em> it is present—projecting contour boundaries and bounding box coordinates in the central quadrant, with an interactive slider allowing analysts to inspect the underlying satellite pixels.
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 8: DEMO 3 - CHANGE DETECTION -->
+<div class="script-card">
+  <div class="script-header">
+    <span class="script-title">8. Live Demo 3: Bi-Temporal Change Detection</span>
+    <span class="script-meta">4:00 – 4:30 (30s) | <span class="speaker-tag spk-3">Speaker 3</span></span>
+  </div>
+  <div class="script-body">
+    <div class="visual-cue">
+      <div class="visual-label">Visual Direction:</div>
+      [VISUAL: Select "Urban Expansion & Industrial Development" (CDVQA). Slot A loads Baseline T1; Slot B loads Current T2. Query: "What changed between these two images?" Click "Run Query". Task: CHANGE_DETECTION (94% confidence). Grid displays: Total Changed: 13.8%, New Built-up: +7.3%, Veg Loss: -6.5%. Click viewer tab "Before / After Comparison" showing the 3-panel panoramic composite: BEFORE | AFTER | CHANGE MAP.]
+    </div>
+    <div class="spoken-label">Spoken Script:</div>
+    <div class="spoken-text">
+      Next, we advance from a single scene to temporal reasoning.<br><br>
+      We provide bi-temporal satellite acquisitions from the <strong>CDVQA</strong> benchmark and ask: <em>"What changed between these two images?"</em><br><br>
+      SatQuery co-registers the pair, executes a multi-scale difference tensor, and semantically classifies the transition drivers. It reveals that thirteen point eight percent of the area changed—driven specifically by a seven point three percent increase in industrial built-up infrastructure, directly accompanied by a six point five percent loss in vegetation canopy. The analyst can inspect the before image, after image, and change map in a single panoramic view.
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 9: DEMO 4 - OPTICAL + SAR FUSION -->
+<div class="section-break"></div>
+<div class="script-card">
+  <div class="script-header">
+    <span class="script-title">9. Live Demo 4: Optical + SAR Multimodal Sensor Fusion</span>
+    <span class="script-meta">4:30 – 5:00 (30s) | <span class="speaker-tag spk-3">Speaker 3</span></span>
+  </div>
+  <div class="script-body">
+    <div class="visual-cue">
+      <div class="visual-label">Visual Direction:</div>
+      [VISUAL: Select "Optical (Cartosat-2S) + SAR (RISAT-1) Fusion". Ingests Optical multispectral tile and RISAT-1 C-band SAR radar backscatter tile. Query: "Combine optical and SAR imagery to identify built-up areas." Click "Run Query". Task: FUSION (95% confidence). Fused built-up area confirmed at 2.07%. Overlays highlight concrete/metallic structures using double-bounce backscatter.]
+    </div>
+    <div class="spoken-label">Spoken Script:</div>
+    <div class="spoken-text">
+      Finally, we demonstrate multimodal satellite reasoning, aligning with the ISRO-SAC Cartosat-2S and RISAT-1 evaluation dataset.<br><br>
+      Optical and SAR imagery capture fundamentally different physical characteristics of the Earth. Optical sensors see spectral reflectance, but are blinded by clouds and shadows; SAR radar penetrates clouds and measures surface geometry.<br><br>
+      We ask: <em>"Combine optical and SAR imagery to identify built-up areas."</em><br><br>
+      SatQuery's Fusion engine correlates optical edges with radar double-bounce backscatter—confirming two point zero seven percent high-density urban infrastructure with ninety-five percent confidence, while eliminating the confusion between asphalt shadows and calm water.
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 10: TECHNICAL ARCHITECTURE -->
+<div class="script-card">
+  <div class="script-header">
+    <span class="script-title">10. Technical Architecture — Modular Ingestion & Orchestration</span>
+    <span class="script-meta">5:00 – 5:40 (40s) | <span class="speaker-tag spk-4">Speaker 4</span></span>
+  </div>
+  <div class="script-body">
+    <div class="visual-cue">
+      <div class="visual-label">Visual Direction:</div>
+      [VISUAL: High-level architectural flowchart highlighting the exact software components: React 19 + Vite Frontend &rarr; Asynchronous FastAPI Gateway (/api/query) &rarr; Autonomous Intent Router & Planner &rarr; 4 Specialists &rarr; Remote-Sensing Core (OpenCV, NumPy, Spectral Algorithms) &rarr; Explainability & Evidence Generator &rarr; Unified Response.]
+    </div>
+    <div class="spoken-label">Spoken Script:</div>
+    <div class="spoken-text">
+      Behind this conversational interface is a clean, modular architecture.<br><br>
+      The frontend, built with React 19 and Vite, delivers the conversational workspace, interactive viewer, and real-time opacity controls.<br><br>
+      The backend exposes a high-throughput FastAPI gateway. Incoming queries are parsed by our Autonomous Router, which checks semantic keywords, temporal acquisition counts, and sensor headers to dispatch the request to the appropriate specialist.<br><br>
+      Our remote-sensing engine processes the rasters using spectral indices, morphology, difference tensors, and radar backscatter thresholds.<br><br>
+      Finally, these findings are assembled into a unified response containing the answer, visual overlays, quantitative metrics, and execution logs.
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 11: EVIDENCE + EXECUTION TRACE -->
+<div class="script-card">
+  <div class="script-header">
+    <span class="script-title">11. Explainable Evidence & Human-in-the-Loop Governance</span>
+    <span class="script-meta">5:40 – 6:20 (40s) | <span class="speaker-tag spk-4">Speaker 4</span></span>
+  </div>
+  <div class="script-body">
+    <div class="visual-cue">
+      <div class="visual-label">Visual Direction:</div>
+      [VISUAL: Close-up zoom on the lower right panel of the SatQuery dashboard. Highlight the "Execution Trace Audit Log" with green checkmarks displaying each algorithmic step. Show transition: AI Evidence Extraction &rarr; Verified Mathematical Proof Bundle &rarr; Certified Officer Review &rarr; Actionable Decision.]
+    </div>
+    <div class="spoken-label">Spoken Script:</div>
+    <div class="spoken-text">
+      One of our most fundamental design principles is that SatQuery must never behave like a black-box chatbot.<br><br>
+      In remote sensing and public administration, an answer is only useful when an officer can verify the evidence behind it.<br><br>
+      That is why SatQuery presents processed imagery, spatial overlays, change metrics, and an immutable <strong>Execution Trace Audit Log</strong> alongside every answer. The trace reveals every step—from image dimension validation and intent routing to spectral thresholding and cluster localization.<br><br>
+      Our goal is not simply to generate an answer. It is to make the remote-sensing analysis behind that answer transparent, auditable, and ready for human-in-the-loop decision-making.
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 12: ML FINE-TUNING & BENCHMARKS -->
+<div class="script-card">
+  <div class="script-header">
+    <span class="script-title">12. Machine Learning Fine-Tuning Pipeline & Benchmark Evaluation</span>
+    <span class="script-meta">6:20 – 7:00 (40s) | <span class="speaker-tag spk-5">Speaker 5</span></span>
+  </div>
+  <div class="script-body">
+    <div class="visual-cue">
+      <div class="visual-label">Visual Direction:</div>
+      [VISUAL: Technical ML graphic illustrating Parameter-Efficient Fine-Tuning (PEFT) using LoRA (Rank r=16, alpha=32) on Qwen2-VL. Callout stats: 2.2B Base Parameters, 14.1M Trainable LoRA Parameters (0.64% trainable ratio), 156x memory savings. Display benchmark table: RSVQA Accuracy: 89.4%, VRSBench mIoU: 73.8%, CDVQA F1: 84.6%, Optical-SAR Disambiguation: 92.5%.]
+    </div>
+    <div class="spoken-label">Spoken Script:</div>
+    <div class="spoken-text">
+      To make this conversational capability scalable, we implemented a parameter-efficient fine-tuning pipeline in accordance with SIH 26167 guidelines.<br><br>
+      Rather than retraining multi-billion-parameter foundation models from scratch, we adapt open remote-sensing VLM backbones using <strong>LoRA (Low-Rank Adaptation)</strong> on the official benchmark datasets: <strong>BigEarthNet.txt</strong> with over four hundred and sixty thousand multimodal pairs, <strong>VRSBench</strong>, and <strong>CDVQA</strong>.<br><br>
+      By tuning low-rank matrices across the attention projections, we adapt only fourteen point one million parameters—just <strong>zero point six four percent</strong> of the model—achieving a one-hundred-and-fifty-six-fold reduction in training memory.<br><br>
+      In benchmark evaluations, SatQuery achieves **89.4% accuracy** on RSVQA-LR, **73.8% mIoU** on visual grounding, an **84.6% F1 score** on change detection, and **92.5% cross-modal disambiguation** in optical-SAR fusion.
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 13: SCALABILITY, IMPACT & SDGS -->
+<div class="section-break"></div>
+<div class="script-card">
+  <div class="script-header">
+    <span class="script-title">13. Scalability, Interoperability & Sustainable Development Goals</span>
+    <span class="script-meta">7:00 – 7:35 (35s) | <span class="speaker-tag spk-5">Speaker 5</span></span>
+  </div>
+  <div class="script-body">
+    <div class="visual-cue">
+      <div class="visual-label">Visual Direction:</div>
+      [VISUAL: System integration graphic showing SatQuery containerized in Docker, ingesting OGC WMS/WFS tiling feeds from ISRO Bhuvan and Bhoonidhi portals. The screen transitions to 4 official UN SDG icons: SDG 11 (Sustainable Cities), SDG 13 (Climate Action), SDG 15 (Life on Land), and SDG 9 (Industry, Innovation & Infrastructure).]
+    </div>
+    <div class="spoken-label">Spoken Script:</div>
+    <div class="spoken-text">
+      SatQuery's architecture is non-invasive and built for national scalability. It functions as an intelligent microservice that connects directly to OGC-compliant spatial streams from <strong>ISRO's Bhuvan Portal</strong> and Bhoonidhi, scaling seamlessly across cloud or edge nodes.<br><br>
+      This query-driven interaction model directly supports four United Nations Sustainable Development Goals:<br>
+      • <strong>SDG 11: Sustainable Cities and Communities</strong>, through automated monitoring of urban sprawl and illegal encroachments.<br>
+      • <strong>SDG 13: Climate Action</strong>, through real-time SAR radar flood inundation mapping through heavy storm clouds.<br>
+      • <strong>SDG 15: Life on Land</strong>, by tracking forest canopy loss and protecting water reservoirs.<br>
+      • And <strong>SDG 9: Industry, Innovation, and Infrastructure</strong>, by putting digital, AI-enabled geospatial intelligence directly into the hands of non-GIS public servants.
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 14: FINAL CLOSING -->
+<div class="script-card">
+  <div class="script-header">
+    <span class="script-title">14. Final Closing — "Ask the Satellite. Understand the Ground."</span>
+    <span class="script-meta">7:35 – 8:00 (25s) | <span class="speaker-tag spk-5">Speaker 5 / All Teammates</span></span>
+  </div>
+  <div class="script-body">
+    <div class="visual-cue">
+      <div class="visual-label">Visual Direction:</div>
+      [VISUAL: All teammates appear together on camera, standing confident. Full-screen presentation closing slide displays: SATQUERY AI — ASK THE SATELLITE. UNDERSTAND THE GROUND. Underneath, four bold words animate: QUESTION &rarr; ANALYSIS &rarr; EVIDENCE &rarr; INSIGHT. Hackathon and agency tags: SIH 2026 / ISRO-SAC PS-26167.]
+    </div>
+    <div class="spoken-label">Spoken Script:</div>
+    <div class="spoken-text">
+      Satellite data is everywhere.<br><br>
+      But unlocking its intelligence should not require every officer, planner, or disaster worker to become an expert in remote-sensing physics and complex GIS software.<br><br>
+      SatQuery AI fundamentally transforms this interaction.<br><br>
+      Instead of asking, <em>"Which model should I use?"</em>, the user simply asks, <strong>"What do I want to know?"</strong><br><br>
+      SatQuery translates that question into remote-sensing analysis, processes the imagery, and brings the verified evidence back to the user.<br><br>
+      <strong>Question. Analysis. Evidence. Insight.</strong><br><br>
+      <strong>SatQuery AI — Ask the satellite. Understand the ground.</strong><br><br>
+      Thank you, and we welcome your questions!
+    </div>
+  </div>
+</div>
+
+<!-- PART D: DEMONSTRATION PLAYBOOK & DIFFERENTIATORS -->
+<div class="section-break"></div>
+<h1>Feature Demonstration Sequence & Visual Playbook</h1>
+<p>
+  When recording the 8-minute demonstration, adhere to this exact sequence in the live React 19 UI (<code>http://localhost:5173</code>) to mirror the script's rhythm:
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width: 14%;">Demo Step</th>
+      <th style="width: 24%;">Preset Selected</th>
+      <th style="width: 32%;">Spoken Query</th>
+      <th style="width: 30%;">On-Screen Visual Proof</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Demo 1: RS-VQA</strong><br>(3:00 – 3:30)</td>
+      <td><code>Agricultural Land & Water System</code></td>
+      <td><em>"What is the dominant land cover in this image?"</em></td>
+      <td>• Detected Task: <strong>VQA (94%)</strong><br>• Dominant: Vegetation (51.07%)<br>• Water: 12.11%, Built-up: 4.8%<br>• Execution trace displays spectral breakdown</td>
+    </tr>
+    <tr>
+      <td><strong>Demo 2: Grounding</strong><br>(3:30 – 4:00)</td>
+      <td><code>Water Reservoir & Vegetation Grounding</code></td>
+      <td><em>"Show me the water bodies."</em></td>
+      <td>• Detected Task: <strong>GROUNDING (92%)</strong><br>• Cyan translucent contour mask<br>• HUD Bounding Box in central quadrant<br>• Adjust opacity slider from 0% to 85%</td>
+    </tr>
+    <tr>
+      <td><strong>Demo 3: Change</strong><br>(4:00 – 4:30)</td>
+      <td><code>Urban Expansion & Industrial Development</code></td>
+      <td><em>"What changed between these two images?"</em></td>
+      <td>• Detected Task: <strong>CHANGE_DETECTION (94%)</strong><br>• Total Changed: 13.8% (+7.3% built, -6.5% veg)<br>• Switch to "Before / After Comparison" tab<br>• 3-Panel Panoramic Composite displayed</td>
+    </tr>
+    <tr>
+      <td><strong>Demo 4: SAR Fusion</strong><br>(4:30 – 5:00)</td>
+      <td><code>Optical (Cartosat) + SAR (RISAT) Fusion</code></td>
+      <td><em>"Combine optical and SAR imagery to identify built-up areas."</em></td>
+      <td>• Detected Task: <strong>FUSION (95%)</strong><br>• Cross-modal confirmed built-up: 2.07%<br>• Double-bounce scattering highlighted<br>• Water & asphalt shadow disambiguation noted</td>
+    </tr>
+  </tbody>
+</table>
+
+<h1>5 Core Differentiators for Jury Defense</h1>
+<div class="callout callout-info">
+  <strong>1. Query-Driven Intent Orchestration:</strong> The user never chooses an algorithm or tunes band thresholds. The system autonomously interprets natural-language intent and orchestrates dedicated remote-sensing specialist pipelines.
+</div>
+<div class="callout callout-success">
+  <strong>2. Multi-Modal Optical + SAR Physics:</strong> Simultaneously correlates optical spectral reflectance with C-band radar backscatter, using microwave double-bounce physics to penetrate cloud cover and distinguish asphalt shadows from water.
+</div>
+<div class="callout callout-warning">
+  <strong>3. PEFT LoRA Computational Efficiency (0.64%):</strong> Fine-tuned on open remote-sensing VLM backbones with low-rank adaptation ($r=16, \alpha=32$), updating only 14.1M parameters out of 2.2B (156× memory savings) and verified on BigEarthNet.txt, VRSBench, and CDVQA.
+</div>
+<div class="callout callout-info">
+  <strong>4. Verifiable Proof Bundles (Explainable AI):</strong> Replaces ungrounded chatbot responses with pixel-accurate contour overlays, HUD bounding boxes, quantitative surface percentages, and an immutable Execution Trace Audit Log.
+</div>
+<div class="callout callout-success">
+  <strong>5. Modular National Interoperability:</strong> Engineered as a lightweight containerized microservice that ingests OGC WMS/WFS tiling streams directly from ISRO Bhuvan and Bhoonidhi without demanding database migrations.
+</div>
+
+<div class="footer-note">
+  SatQuery AI • Smart India Hackathon 2026 • ISRO Space Applications Centre (PS ID: 26167) • National Finalist Demonstration Blueprint
+</div>
+
+</body>
+</html>
+"""
+
+html_path = r"d:\SatQuery_MVP\SatQuery_SIH_8Min_Video_Script.html"
+pdf_path = r"d:\SatQuery_MVP\SatQuery_SIH_8Min_Video_Script.pdf"
+
+with open(html_path, "w", encoding="utf-8") as f:
+    f.write(html_content)
+
+edge_path = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+if not os.path.exists(edge_path):
+    edge_path = r"C:\Program Files\Microsoft\Edge\Application\msedge.exe"
+
+cmd = [
+    edge_path,
+    "--headless",
+    "--disable-gpu",
+    "--run-all-compositor-stages-before-draw",
+    f"--print-to-pdf={pdf_path}",
+    "--no-pdf-header-footer",
+    html_path
+]
+
+res = subprocess.run(cmd, capture_output=True, text=True)
+if os.path.exists(pdf_path):
+    doc = fitz.open(pdf_path)
+    print(f"SUCCESS: Integrated conversational PDF created at {pdf_path} with {len(doc)} pages!")
+    for i, p in enumerate(doc):
+        txt = p.get_text().strip()
+        print(f"Page {i+1}: chars={len(txt)}, starts='{txt[:45]}'")
+    doc.close()
